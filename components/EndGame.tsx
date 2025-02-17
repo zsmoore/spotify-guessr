@@ -16,7 +16,7 @@ const EndGame = (props: EndGameProps) => {
   }
 
   return (
-    <div className="grid grid-cols-3 gap-4">
+    <div className="grid grid-cols-3 gap-4 m-auto">
       <div className="col-span-2">
         <Image src={props.track.album.images[0].url} className="flex-start" alt="" height={500} width={500}/>
       </div>

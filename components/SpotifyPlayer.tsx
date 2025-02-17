@@ -71,7 +71,6 @@ const SpotifyPlayer = (props: SpotifyPlayerProps) => {
         try {
         await props.sdk.player.addItemToPlaybackQueue(props.track.uri);
         } catch (e) {
-          console.log(e);
         }
         setItemQueued(() => true);
       }
@@ -95,17 +94,21 @@ const SpotifyPlayer = (props: SpotifyPlayerProps) => {
   }, [itemQueued, props.sdk.player, props.track.id]);
 
   useLayoutEffect(() => {
-    if (rateLimit) {
+    if (rateLimit || loaded) {
       return;
     }
 
+    console.log(songSet, currentTrack?.id, props.track.id, rateLimit);
+
     if (songSet && currentTrack && currentTrack.id !== props.track.id) {
-      player?.nextTrack();
-      setSkipAttempts((s) => s + 1);
+      setTimeout(() => {
+        player?.nextTrack();
+        setSkipAttempts((s) => s + 1);
+      }, 2000);
     } else if (currentTrack && currentTrack.id === props.track.id) {
       setLoaded(() => true);
     }
-  }, [currentTrack, props.track, songSet, player, rateLimit]);
+  }, [currentTrack, props.track, songSet, rateLimit, loaded, player]);
 
   useEffect(() => {
     if (skipAttempts > 10) {
@@ -114,12 +117,12 @@ const SpotifyPlayer = (props: SpotifyPlayerProps) => {
   }, [skipAttempts]);
 
   return (
-    <div>
-      {rateLimit ? <div>Rate limited try again</div>
+    <>
+      {rateLimit ? <div>Spotify SDK Sucks: Try Again (Refresh)</div>
       : loaded && player
         ? <Game sdk={props.sdk} player={player} targetTrack={props.track} options={props.allTrackNames}/>
-        : <BarLoader loading={true} /> }
-    </div>
+        : <BarLoader className="m-auto" loading={true} color={window.getComputedStyle(document.body).getPropertyValue("--foreground")} /> }
+    </>
   );
 }
 

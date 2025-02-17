@@ -2,7 +2,7 @@
 
 import { getAllTrackNamesRandomized, getRandomTrack } from "@/lib/data/data";
 import { SpotifyApi, Track } from "@spotify/web-api-ts-sdk";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { BarLoader } from "react-spinners";
 import SpotifyPlayer from "./SpotifyPlayer";
 
@@ -13,6 +13,10 @@ interface TrackFinderProps {
 const TrackFinder = (props: TrackFinderProps) => {
   const [randomTrack, setRandomTrack] = useState<Track>();
   const [token, setToken] = useState<string>();
+  const [color, setColor] = useState<string>();
+  useLayoutEffect(() => {
+    setColor(() => window.getComputedStyle(document.body).getPropertyValue("--foreground"));
+  }, [])
   useEffect(() => {
     (async () => {
       setRandomTrack(await getRandomTrack(props.sdk));
@@ -22,13 +26,17 @@ const TrackFinder = (props: TrackFinderProps) => {
   }, [props.sdk]);
 
   return (
-    <div>
+    <>
       {randomTrack && token
-      ? <div>
-        <SpotifyPlayer sdk={props.sdk} track={randomTrack} token={token} allTrackNames={getAllTrackNamesRandomized()}/>
+      ? <>
+          <SpotifyPlayer sdk={props.sdk} track={randomTrack} token={token} allTrackNames={getAllTrackNamesRandomized()}/>
+        </>
+      : <div className="grid grid-col-3 gap-4 m-auto">
+          <p className="col-span-3">Bootstrapping songs</p>
+          <BarLoader className="ms-6" loading={true} color={color} />
         </div>
-      : <BarLoader loading={true} />}
-    </div>
+        }
+    </>
   );
 }
 
