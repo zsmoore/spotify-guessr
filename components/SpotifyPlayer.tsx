@@ -1,105 +1,124 @@
 "use client";
 
+import { loadSpotifyPlayer } from "@/lib/spotify-sdk/util";
 import { SpotifyApi, Track } from "@spotify/web-api-ts-sdk";
-import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
+import { BarLoader } from "react-spinners";
+import Game from "./Game";
 
 interface SpotifyPlayerProps {
   sdk: SpotifyApi,
+  token: string,
   track: Track
+  allTrackNames: string[]
 }
 
 const SpotifyPlayer = (props: SpotifyPlayerProps) => {
+
   const [player, setPlayer] = useState<Spotify.Player>();
-  const [isPaused, setPaused] = useState<boolean>(false);
   const [isActive, setActive] = useState<boolean>(false);
   const [currentTrack, setTrack] = useState<Spotify.Track | null>(null);
-  const [deviceId, setDeviceId] = useState<string>();
+  const [songSet, setSongSet] = useState(false);
+  const [itemQueued, setItemQueued] = useState(false);
+  const [skipAttempts, setSkipAttempts] = useState(0);
+  const [rateLimit, setRateLimit] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  const initializePlayer = () => {
+    const player = new window.Spotify.Player( {
+      name: "Web Playback SDK",
+      getOAuthToken: cb => { cb(props.token);},
+      volume: 0.5
+    });
+
+    player.addListener('ready', ({ device_id }) => {
+      props.sdk.player.transferPlayback([device_id]);
+      setPlayer(() => player);
+    });
+  
+    player.addListener("player_state_changed", (state) => {
+      if (!state) {
+        return;
+      }
+
+      setTrack(() => state.track_window.current_track);
+
+      player.getCurrentState().then((state) => {
+        if (!state) {
+          setActive(() => false);
+        } else if (state && !isActive){
+          setActive(() => true);
+        }
+      });
+    });
+    player.connect();
+  }
+
+  window.onSpotifyWebPlaybackSDKReady = initializePlayer;
+  
   useEffect(() => {
     (async () => {
-      const token = await props.sdk.getAccessToken();
-      
-      const script = document.createElement("script");
-      script.src = "https://sdk.scdn.co/spotify-player.js";
-      script.async = false;
-      script.defer = true;
-      script.id = "spotify-player";
-      script.type = "text/javascript"
-      
-      document.body.appendChild(script);
-      
+      await loadSpotifyPlayer();
       window.onSpotifyWebPlaybackSDKReady = () => {
-        const player = new window.Spotify.Player( {
-          name: "Web Playback SDK",
-          getOAuthToken: cb => { cb(token!.access_token);},
-          volume: 0.5,
-          enableMediaSession: true
-        });
-
-        setPlayer(player);
-  
-        player.addListener('ready', ({ device_id }) => {
-          console.log('Ready with Device ID', device_id);
-          setDeviceId(() => device_id);
-        });
-  
-        player.addListener('not_ready', ({ device_id }) => {
-          console.log('Device ID has gone offline', device_id);
-        });
-
-        player.addListener("player_state_changed", (state) => {
-          if (!state) {
-            return;
-          }
-  
-          setTrack(state.track_window.current_track);
-          setPaused(state.paused);
-  
-          player.getCurrentState().then((state) => {
-            if (!state) {
-              setActive(false);
-            } else {
-              setActive(true);
-            }
-          });
-        });
-  
-        player.connect();
-      };
+        initializePlayer();
+      }
     })();
   }, [props.sdk]);
 
   useEffect(() => {
-    if (player && deviceId) {
-      props.sdk.player.transferPlayback([deviceId], true);
+    (async () => {
+      if (!itemQueued && player && isActive) {
+        try {
+        await props.sdk.player.addItemToPlaybackQueue(props.track.uri);
+        } catch (e) {
+          console.log(e);
+        }
+        setItemQueued(() => true);
+      }
+    })();
+  }, [player, isActive, props.sdk, props.track, itemQueued])
+
+  useEffect(() => {
+    (async () => {
+      if (itemQueued) {
+        const queue = await props.sdk.player.getUsersQueue();
+        for (let i = 0; i < queue.queue.length; i++) {
+          const item = queue.queue[i];
+          if (item.id === props.track.id) {
+            setSongSet(() => true);
+            return;
+          }
+        }
+        setItemQueued(() => true);
+      }
+    })();
+  }, [itemQueued, props.sdk.player, props.track.id]);
+
+  useLayoutEffect(() => {
+    if (rateLimit) {
+      return;
     }
-  }, [props.sdk, player, deviceId])
+
+    if (songSet && currentTrack && currentTrack.id !== props.track.id) {
+      player?.nextTrack();
+      setSkipAttempts((s) => s + 1);
+    } else if (currentTrack && currentTrack.id === props.track.id) {
+      setLoaded(() => true);
+    }
+  }, [currentTrack, props.track, songSet, player, rateLimit]);
+
+  useEffect(() => {
+    if (skipAttempts > 10) {
+      setRateLimit(() => true);
+    }
+  }, [skipAttempts]);
 
   return (
     <div>
-    {isActive && currentTrack ? 
-      <div className="container">
-        <div className="main-wrapper">
-          <img src={currentTrack!.album.images[0].url} className="now-playing__cover" alt="" />
-          <div className="now-playing__side">
-            <div className="now-playing__name">{currentTrack!.name}</div>
-            <div className="now-playing__artist">{currentTrack!.artists[0].name}</div>
-              <button className="btn-spotify" onClick={() => { player!.previousTrack() }} >
-                  &lt;&lt;
-              </button>
-              <button className="btn-spotify" onClick={() => { player!.togglePlay() }} >
-                  { isPaused ? "PLAY" : "PAUSE" }
-              </button>
-              <button className="btn-spotify" onClick={() => { player!.nextTrack() }} >
-                  &gt;&gt;
-              </button>
-          </div>
-        </div>
-      </div>
-      :<div>
-      Not active
-    </div>
-    }
+      {rateLimit ? <div>Rate limited try again</div>
+      : loaded && player
+        ? <Game sdk={props.sdk} player={player} targetTrack={props.track} options={props.allTrackNames}/>
+        : <BarLoader loading={true} /> }
     </div>
   );
 }

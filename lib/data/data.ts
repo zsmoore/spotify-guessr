@@ -1,7 +1,8 @@
 "use client";
 
 import { Page, SavedTrack, SpotifyApi, Track } from "@spotify/web-api-ts-sdk";
-import { getLocalTracks, storeTracks } from "../util/storage";
+import { getLocalTrackNames, getLocalTracks, storeTracks } from "../util/storage";
+import { shuffle } from "../util/util";
 
 const getAllSavedSongs = async (sdk: SpotifyApi): Promise<Track[]> => {
   const allResults: Track[] = [];
@@ -36,6 +37,14 @@ export const getRandomTrack = async (sdk: SpotifyApi): Promise<Track> => {
   }
 
   throw new Error("Cannot find songs");
+}
+
+export const getAllTrackNamesRandomized = (): string[] => {
+  const names = getLocalTrackNames();
+  if (!names) {
+    throw new Error("unexpected missing data");
+  }
+  return shuffle(names);
 }
 
 const getTrack = async (sdk: SpotifyApi, id: string): Promise<Track> => {

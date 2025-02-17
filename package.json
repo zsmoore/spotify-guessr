@@ -13,6 +13,7 @@
     "next": "15.1.6",
     "next-auth": "^4.24.11",
     "react": "^19.0.0",
+    "react-bootstrap-typeahead": "^7.0.0-rc.4",
     "react-dom": "^19.0.0",
     "react-spinners": "^0.15.0"
   },

@@ -1,6 +1,6 @@
 "use client";
 
-import { getRandomTrack } from "@/lib/data/data";
+import { getAllTrackNamesRandomized, getRandomTrack } from "@/lib/data/data";
 import { SpotifyApi, Track } from "@spotify/web-api-ts-sdk";
 import { useEffect, useState } from "react";
 import { BarLoader } from "react-spinners";
@@ -10,21 +10,22 @@ interface TrackFinderProps {
   sdk: SpotifyApi
 }
 
-
 const TrackFinder = (props: TrackFinderProps) => {
   const [randomTrack, setRandomTrack] = useState<Track>();
+  const [token, setToken] = useState<string>();
   useEffect(() => {
     (async () => {
       setRandomTrack(await getRandomTrack(props.sdk));
+      const tok = await props.sdk.getAccessToken();
+      setToken(() => tok?.access_token);
     })();
   }, [props.sdk]);
 
   return (
     <div>
-      {randomTrack 
+      {randomTrack && token
       ? <div>
-        {randomTrack.name}
-        <SpotifyPlayer sdk={props.sdk} track={randomTrack}/>
+        <SpotifyPlayer sdk={props.sdk} track={randomTrack} token={token} allTrackNames={getAllTrackNamesRandomized()}/>
         </div>
       : <BarLoader loading={true} />}
     </div>
