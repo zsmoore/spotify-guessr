@@ -32,7 +32,7 @@ const getOptions = (arr: string[]): OptionObj[] => {
 const Game = (props: GameProps) => {
   const allOptions = useRef(getOptions(props.options));
   
-  const [currentSelected, setCurrentSelected] = useState(allOptions.current[0]);
+  const [currentSelected, setCurrentSelected] = useState<OptionObj | null>(allOptions.current[0]);
   const [query, setQuery] = useState('')
   const [success, setSuccess] = useState(false);
   const [gameEnd, setGameEnd] = useState(false);
@@ -114,7 +114,7 @@ const Game = (props: GameProps) => {
         <Combobox value={currentSelected} onChange={setCurrentSelected} onClose={() => setQuery('')}>
           <ComboboxInput
            className="ps-1"
-           displayValue={(option) => option?.name}
+           displayValue={(option) => (option as OptionObj)?.name}
            onChange={(event) => setQuery(event.target.value)}
           />
           <ComboboxOptions className="grid gap-4">
