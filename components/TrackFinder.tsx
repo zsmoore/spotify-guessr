@@ -2,7 +2,7 @@
 
 import { getAllTrackNamesRandomized, getRandomTrack } from "@/lib/data/data";
 import { SpotifyApi, Track } from "@spotify/web-api-ts-sdk";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { BarLoader } from "react-spinners";
 import SpotifyPlayer from "./SpotifyPlayer";
 

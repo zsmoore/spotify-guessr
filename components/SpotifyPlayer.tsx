@@ -70,6 +70,7 @@ const SpotifyPlayer = (props: SpotifyPlayerProps) => {
       if (!itemQueued && player && isActive) {
         try {
         await props.sdk.player.addItemToPlaybackQueue(props.track.uri);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (e) {
         }
         setItemQueued(() => true);

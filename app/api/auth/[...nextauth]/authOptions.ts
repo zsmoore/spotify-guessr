@@ -43,6 +43,7 @@ const authOptions: AuthOptions = {
 
       return updatedToken;
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async session({ session, token }: { session: any; token: any }) {
       const user: AuthUser = {
         ...session.user,

@@ -39,8 +39,10 @@ const Game = (props: GameProps) => {
   const [attemptNumber, setAttemptNumber] = useState(0);
   const [timeToGo, setTimeToGo] = useState(1);
   const isPlaying = useRef(false);
-  let timeoutId: any | undefined = useRef(undefined);
-  let intervalId: any | undefined = useRef(undefined);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const timeoutId: any | undefined = useRef(undefined);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const intervalId: any | undefined = useRef(undefined);
   const durations = new Map([
     [0, 1],
     [1, 3],

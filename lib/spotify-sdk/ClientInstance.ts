@@ -20,6 +20,7 @@ class NextAuthStrategy implements IAuthStrategy {
   }
 
   public async getAccessToken(): Promise<AccessToken> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const session: any = await getSession();
     if (!session) {
       return {} as AccessToken;
@@ -45,7 +46,8 @@ class NextAuthStrategy implements IAuthStrategy {
     console.warn("[Spotify-SDK][WARN]\nremoveAccessToken not implemented");
   }
 
-  public setConfiguration(configuration: SdkConfiguration): void {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public setConfiguration(_configuration: SdkConfiguration): void {
     console.warn("[Spotify-SDK][WARN]\nsetConfiguration not implemented");
   }
 }
